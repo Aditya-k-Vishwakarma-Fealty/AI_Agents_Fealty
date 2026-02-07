@@ -3,7 +3,7 @@ Interviews API Router - Endpoints for interview management.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import logging
 from datetime import datetime
@@ -174,18 +174,16 @@ async def schedule_interview(
     db: Session = Depends(get_db)
 ):
     """
-    Schedule an interview (sends invitation email).
+    Schedule an interview (sends invitation email and sets preferred time).
     
     Args:
         request: Schedule request
-        db: Database session
-    
-    Returns:
-        Confirmation
+        db: Session
     """
     try:
         from app.db.models import Candidate, Role
         from app.tools.email_tool import EmailTool
+        from app.services.candidate_service import CandidateService
         
         # Get candidate and role
         candidate = db.query(Candidate).filter(Candidate.id == request.candidate_id).first()
@@ -194,19 +192,23 @@ async def schedule_interview(
         if not candidate or not role:
             raise HTTPException(status_code=404, detail="Candidate or role not found")
         
-        # Send interview invitation
+        # Update preferred time in DB
+        candidate.preferred_interview_time = request.interview_datetime
+        db.commit()
+
+        # Send interview invitation email
         email_tool = EmailTool()
         result = email_tool.send_interview_invite(
             candidate_name=candidate.name,
             candidate_email=candidate.email,
             role_title=role.title,
-            interview_datetime=request.interview_datetime
+            interview_datetime=request.interview_datetime.strftime("%Y-%m-%d %H:%M:%S")
         )
         
         if result["status"] == "success":
             return {
                 "status": "success",
-                "message": "Interview invitation sent",
+                "message": "Interview invitation sent and scheduled in database",
                 "candidate_email": candidate.email,
                 "interview_datetime": request.interview_datetime
             }
@@ -285,3 +287,58 @@ async def make_final_decision(
     except Exception as e:
         logger.error(f"Error making final decision: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/voice-webhook")
+async def voice_interview_webhook(
+    data: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """
+    Webhook for Retell AI to report call completion and transcripts.
+    """
+    try:
+        event = data.get("event")
+        call_data = data.get("call", {})
+        call_id = call_data.get("call_id")
+        
+        if event == "call_ended":
+            logger.info(f"Received call_ended event for call {call_id}")
+            
+            transcript = call_data.get("transcript")
+            duration = call_data.get("duration_ms", 0) / 1000
+            
+            service = EvaluationService(db)
+            result = await service.process_voice_interview_result(
+                call_id=call_id,
+                transcript=transcript,
+                duration=duration
+            )
+            return result
+        
+        return {"status": "ignored", "event": event}
+    except Exception as e:
+        logger.error(f"Webook error: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.get("/voice-sync/{call_id}")
+async def sync_voice_call(
+     call_id: str,
+     db: Session = Depends(get_db)
+):
+    """
+    Manually sync a call's status if webhook was missed.
+    """
+    from app.services.voice_service import voice_ai_service
+    details = voice_ai_service.get_call_details(call_id)
+    
+    if details["status"] == "success":
+        service = EvaluationService(db)
+        result = await service.process_voice_interview_result(
+            call_id=call_id,
+            transcript=details["transcript"],
+            duration=details["duration"]
+        )
+        return result
+    return details

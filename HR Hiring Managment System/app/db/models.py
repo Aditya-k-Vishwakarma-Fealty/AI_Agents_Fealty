@@ -67,6 +67,7 @@ class Candidate(Base):
         default=CandidateStatus.ACTIVE,
         nullable=False
     )
+    preferred_interview_time = Column(DateTime, nullable=True)
     
     # Relationships
     scores = relationship("CandidateScore", back_populates="candidate", cascade="all, delete-orphan")
@@ -138,6 +139,12 @@ class Interview(Base):
     feedback = Column(Text, nullable=True)
     ai_evaluation = Column(JSON, nullable=True)  # AI-generated evaluation
     created_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Voice Interview Fields
+    is_voice_interview = Column(Boolean, default=False, nullable=False)
+    voice_session_id = Column(String(255), nullable=True)
+    voice_transcript = Column(Text, nullable=True)
+    voice_duration_seconds = Column(Integer, nullable=True)
     
     # Relationships
     candidate = relationship("Candidate", back_populates="interviews")

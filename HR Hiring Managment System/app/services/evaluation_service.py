@@ -344,3 +344,72 @@ class EvaluationService:
         except Exception as e:
             logger.error(f"Error getting rankings: {e}")
             return []
+    async def process_voice_interview_result(
+        self,
+        call_id: str,
+        transcript: str,
+        duration: float
+    ) -> Dict[str, Any]:
+        """
+        Process results from a completed voice interview.
+        
+        Args:
+            call_id: Retell call/session ID
+            transcript: Interview transcript
+            duration: Call duration in seconds
+        """
+        try:
+            # Find interview record
+            interview = self.db.query(Interview).filter(
+                Interview.voice_session_id == call_id
+            ).first()
+            
+            if not interview:
+                logger.error(f"Interview record not found for call_id: {call_id}")
+                return {"status": "error", "message": "Interview record not found"}
+            
+            # Update interview with transcript
+            interview.voice_transcript = transcript
+            interview.voice_duration_seconds = int(duration)
+            
+            # Use AI to analyze the transcript and provide scores
+            # We can repurpose the InterviewAgent but with a different prompt if needed.
+            # For now, let's use the standard evaluate_interview logic but adapted for transcripts
+            
+            candidate = self.db.query(Candidate).filter(Candidate.id == interview.candidate_id).first()
+            role = self.db.query(Role).filter(Role.id == interview.role_id).first()
+            
+            # Use the agent to analyze the transcript
+            # We'll pass the transcript as if it was 'feedback' for now, 
+            # but we should ideally have a specialized prompt.
+            eval_result = interview_agent.evaluate_interview(
+                communication_score=5, # Baseline, AI will revise
+                knowledge_score=5,
+                confidence_score=5,
+                feedback=f"VOICE INTERVIEW TRANSCRIPT:\n{transcript}",
+                candidate_data={"name": candidate.name},
+                role_data={"title": role.title}
+            )
+            
+            if eval_result["status"] == "success":
+                data = eval_result["data"]
+                interview.overall_score = data.get("overall_score", 0)
+                # Attempt to extract sub-scores if available, otherwise use overall
+                interview.communication_score = data.get("overall_score", 0)
+                interview.knowledge_score = data.get("overall_score", 0)
+                interview.confidence_score = data.get("overall_score", 0)
+                interview.ai_evaluation = data
+                
+                # Update candidate stage
+                candidate.current_stage = CandidateStage.INTERVIEWED
+                self.db.commit()
+                
+                logger.info(f"Successfully processed voice interview for {candidate.name}")
+                return {"status": "success", "candidate_id": candidate.id}
+            else:
+                return eval_result
+                
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error processing voice interview result: {e}")
+            return {"status": "error", "message": str(e)}

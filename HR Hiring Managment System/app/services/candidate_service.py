@@ -308,3 +308,19 @@ class CandidateService:
                 "status": "error",
                 "message": str(e)
             }
+
+    async def update_preferred_time(self, candidate_id: int, preferred_time: datetime) -> Dict[str, Any]:
+        """Update candidate's preferred interview time."""
+        try:
+            candidate = self.db.query(Candidate).filter(Candidate.id == candidate_id).first()
+            if not candidate:
+                return {"status": "error", "message": "Candidate not found"}
+            
+            candidate.preferred_interview_time = preferred_time
+            self.db.commit()
+            logger.info(f"Updated preferred interview time for candidate {candidate_id} to {preferred_time}")
+            return {"status": "success", "message": "Preferred time updated"}
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error updating preferred time: {e}")
+            return {"status": "error", "message": str(e)}

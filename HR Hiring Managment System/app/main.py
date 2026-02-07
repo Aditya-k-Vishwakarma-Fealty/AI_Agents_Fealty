@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from app.config.settings import settings
 from app.db.session import init_db, close_db
 from app.api import candidates, roles, interviews
+from app.utils.scheduler import start_scheduler, shutdown_scheduler
 
 # Configure logging
 logging.basicConfig(
@@ -43,12 +44,16 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to create directories: {e}")
         raise
     
+    # Start scheduler
+    start_scheduler()
+    
     logger.info("Application startup complete")
     
     yield
     
     # Shutdown
     logger.info("Shutting down HR Hiring Management System...")
+    shutdown_scheduler()
     close_db()
     logger.info("Application shutdown complete")
 

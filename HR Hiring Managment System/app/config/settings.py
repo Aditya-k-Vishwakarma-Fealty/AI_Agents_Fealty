@@ -78,6 +78,14 @@ class Settings(BaseSettings):
         alias="EMAIL_INTERVIEW_SUBJECT"
     )
     
+    # Retell AI Configuration
+    retell_api_key: str = Field(default="", alias="RETELL_API_KEY")
+    retell_agent_id: str = Field(default="", alias="RETELL_AGENT_ID")
+    
+    # Scheduling
+    scheduler_enabled: bool = Field(default=True, alias="SCHEDULER_ENABLED")
+    voice_interview_check_interval_mins: int = Field(default=1, alias="VOICE_INTERVIEW_CHECK_INTERVAL_MINS")
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
