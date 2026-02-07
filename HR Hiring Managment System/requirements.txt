@@ -41,5 +41,5 @@ httpx
 pytest-asyncio
 
 # Voice AI & Scheduling
-retell-sdk==1.0.0
+retell-sdk>=5.0.0
 apscheduler==3.10.4
