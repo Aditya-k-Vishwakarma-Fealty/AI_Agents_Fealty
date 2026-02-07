@@ -1,0 +1,34 @@
+venv/
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files
+.env
+credentials.json
+token.json
+
+# Data directories
+data/resumes/*
+!data/resumes/.gitkeep
+data/chroma/*
+!data/chroma/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
