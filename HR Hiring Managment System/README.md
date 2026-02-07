@@ -292,7 +292,7 @@ pytest --cov=app tests/
 - `candidate_scores` - Resume matching scores
 - `interviews` - Interview feedback
 - `email_logs` - Email communication tracking
-- `final_rankings` - Combined rankings
+- `final_rankings` - Combined rankings.
 
 ### ChromaDB Collections
 
