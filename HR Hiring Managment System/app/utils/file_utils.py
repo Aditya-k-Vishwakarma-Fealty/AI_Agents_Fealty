@@ -9,23 +9,12 @@ import logging
 
 from PyPDF2 import PdfReader
 from docx import Document
-from sentence_transformers import SentenceTransformer
 
 from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# Initialize embedding model (lazy loading)
-_embedding_model = None
-
-
-def get_embedding_model() -> SentenceTransformer:
-    """Get or initialize the embedding model."""
-    global _embedding_model
-    if _embedding_model is None:
-        _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        logger.info("Embedding model loaded successfully")
-    return _embedding_model
+# Embedding model (removed to save memory, using OpenAI instead)
 
 
 def validate_file_type(filename: str) -> Tuple[bool, Optional[str]]:
@@ -146,25 +135,7 @@ def extract_text_from_resume(file_path: str) -> str:
         raise ValueError(f"Unsupported file format: {file_ext}")
 
 
-def generate_embedding(text: str) -> list:
-    """
-    Generate embedding vector for text.
-    
-    Args:
-        text: Input text
-    
-    Returns:
-        list: Embedding vector
-    """
-    try:
-        model = get_embedding_model()
-        embedding = model.encode(text, convert_to_numpy=True)
-        
-        logger.info(f"Generated embedding for text (length: {len(text)} chars)")
-        return embedding.tolist()
-    except Exception as e:
-        logger.error(f"Error generating embedding: {e}")
-        raise
+
 
 
 def delete_resume_file(file_path: str):

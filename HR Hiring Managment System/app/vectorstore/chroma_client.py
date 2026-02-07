@@ -3,6 +3,7 @@ ChromaDB client for vector storage and similarity search.
 """
 import chromadb
 from chromadb.config import Settings as ChromaSettings
+from chromadb.utils import embedding_functions
 from typing import List, Dict, Any, Optional
 import logging
 
@@ -16,11 +17,13 @@ class ChromaClient:
     
     def __init__(self):
         """Initialize ChromaDB client with persistent storage."""
-        self.client = chromadb.Client(
-            ChromaSettings(
-                persist_directory=settings.chroma_persist_directory,
-                anonymized_telemetry=False
-            )
+        self.client = chromadb.PersistentClient(
+            path=settings.chroma_persist_directory,
+            settings=ChromaSettings(anonymized_telemetry=False)
+        )
+        self.openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=settings.openai_api_key,
+            model_name="text-embedding-3-small"
         )
         self._init_collections()
     
@@ -30,12 +33,14 @@ class ChromaClient:
             # Resume collection
             self.resumes_collection = self.client.get_or_create_collection(
                 name=settings.chroma_collection_resumes,
+                embedding_function=self.openai_ef,
                 metadata={"description": "Resume embeddings for candidate matching"}
             )
             
             # Roles collection
             self.roles_collection = self.client.get_or_create_collection(
                 name=settings.chroma_collection_roles,
+                embedding_function=self.openai_ef,
                 metadata={"description": "Job description embeddings for role matching"}
             )
             
