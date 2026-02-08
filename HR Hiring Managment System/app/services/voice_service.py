@@ -53,7 +53,7 @@ class VoiceAIService:
             # Referencing typical SDK usage:
             
             call = self.client.call.create_phone_call(
-                from_number=settings.sender_email, # This needs to be a Retell phone number in reality
+                from_number=settings.retell_phone_number,
                 to_number=to_number,
                 override_agent_id=self.agent_id,
                 retell_llm_dynamic_variables={
@@ -80,7 +80,7 @@ class VoiceAIService:
                 "status": "success",
                 "transcript": call.transcript,
                 "duration": call.duration_ms / 1000 if call.duration_ms else 0,
-                "summary": call.call_analysis.get("call_summary") if call.call_analysis else ""
+                "summary": call.call_analysis.call_summary if call.call_analysis else ""
             }
         except Exception as e:
             logger.error(f"Error retrieving call details: {e}")

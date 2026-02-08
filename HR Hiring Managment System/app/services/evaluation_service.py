@@ -380,24 +380,19 @@ class EvaluationService:
             role = self.db.query(Role).filter(Role.id == interview.role_id).first()
             
             # Use the agent to analyze the transcript
-            # We'll pass the transcript as if it was 'feedback' for now, 
-            # but we should ideally have a specialized prompt.
-            eval_result = interview_agent.evaluate_interview(
-                communication_score=5, # Baseline, AI will revise
-                knowledge_score=5,
-                confidence_score=5,
-                feedback=f"VOICE INTERVIEW TRANSCRIPT:\n{transcript}",
-                candidate_data={"name": candidate.name},
-                role_data={"title": role.title}
+            # We use the new evaluate_transcript method
+            eval_result = interview_agent.evaluate_transcript(
+                transcript=transcript,
+                candidate_name=candidate.name,
+                role_title=role.title
             )
             
             if eval_result["status"] == "success":
                 data = eval_result["data"]
                 interview.overall_score = data.get("overall_score", 0)
-                # Attempt to extract sub-scores if available, otherwise use overall
-                interview.communication_score = data.get("overall_score", 0)
-                interview.knowledge_score = data.get("overall_score", 0)
-                interview.confidence_score = data.get("overall_score", 0)
+                interview.communication_score = data.get("communication_score", 0)
+                interview.knowledge_score = data.get("knowledge_score", 0)
+                interview.confidence_score = data.get("confidence_score", 0)
                 interview.ai_evaluation = data
                 
                 # Update candidate stage

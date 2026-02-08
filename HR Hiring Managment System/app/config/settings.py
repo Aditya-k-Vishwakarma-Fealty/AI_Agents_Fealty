@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     # Retell AI Configuration
     retell_api_key: str = Field(default="", alias="RETELL_API_KEY")
     retell_agent_id: str = Field(default="", alias="RETELL_AGENT_ID")
+    retell_phone_number: str = Field(default="+14012468758", alias="RETELL_PHONE_NUMBER")
     
     # Scheduling
     scheduler_enabled: bool = Field(default=True, alias="SCHEDULER_ENABLED")

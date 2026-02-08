@@ -131,6 +131,55 @@ Required Experience: {role_data.get('experience_required', 0)} years
             confidence_score * 0.25
         )
         return round(overall, 2)
+    
+    def evaluate_transcript(
+        self,
+        transcript: str,
+        candidate_name: str,
+        role_title: str
+    ) -> Dict[str, Any]:
+        """
+        Evaluate voice interview transcript.
+        
+        Args:
+            transcript: Full call transcript
+            candidate_name: Name of candidate
+            role_title: Role title
+            
+        Returns:
+            Dict with scores and analysis
+        """
+        try:
+            # Load voice prompt
+            with open("app/prompts/voice_interview_prompt.txt", "r") as f:
+                voice_prompt_template = f.read()
+            
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", voice_prompt_template),
+                ("human", "{transcript}")
+            ])
+            
+            # Create chain
+            chain = prompt | self.llm | self.parser
+            
+            # Execute
+            result = chain.invoke({
+                "transcript": transcript,
+                "candidate_name": candidate_name,
+                "role_title": role_title
+            })
+            
+            logger.info("Successfully evaluated voice transcript")
+            return {
+                "status": "success",
+                "data": result
+            }
+        except Exception as e:
+            logger.error(f"Error evaluating transcript: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
 
 
 # Global agent instance
