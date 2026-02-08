@@ -22,7 +22,7 @@ async def check_and_trigger_voice_interviews():
     """
     db = SessionLocal()
     try:
-        now = datetime.utcnow()
+        now = datetime.now()
         # Look for candidates scheduled for the next 2 minutes (to avoid missing window)
         # and who are in the SHORTLISTED stage (or whatever stage indicates ready for voice)
         window_start = now - timedelta(minutes=1)

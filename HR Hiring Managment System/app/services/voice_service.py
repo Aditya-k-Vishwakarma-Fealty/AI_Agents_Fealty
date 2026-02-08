@@ -37,14 +37,15 @@ class VoiceAIService:
             Retell call object or error dict
         """
         try:
-            # Load and format prompt
-            with open("app/prompts/voice_prompt.txt", "r") as f:
-                prompt_template = f.read()
-                
-            dynamic_prompt = prompt_template.replace("{{candidate_name}}", candidate_name)
-            dynamic_prompt = dynamic_prompt.replace("{{role_title}}", role_title)
-            dynamic_prompt = dynamic_prompt.replace("{{key_skills}}", key_skills)
-            
+            # Basic number normalization for E.164
+            # If it doesn't start with +, and is 10 digits, assume +91 (India) as default for this user
+            # or just add + if it looks like it might have a country code but missing +
+            if not to_number.startswith('+'):
+                if len(to_number) == 10:
+                    to_number = f"+91{to_number}"
+                else:
+                    to_number = f"+{to_number}"
+
             logger.info(f"Initiating Retell call to {to_number} for {candidate_name}...")
             
             # Using Retell SDK to register-call and then call (or create-call directly if using their phone numbers)
