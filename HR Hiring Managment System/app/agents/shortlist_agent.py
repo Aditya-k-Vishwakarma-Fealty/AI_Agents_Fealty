@@ -60,6 +60,8 @@ class ShortlistAgent:
             }
         except Exception as e:
             logger.error(f"Error in shortlisting evaluation: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 "status": "error",
                 "message": str(e)
@@ -125,6 +127,8 @@ class ShortlistAgent:
             }
         except Exception as e:
             logger.error(f"Error in batch evaluation: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 "status": "error",
                 "message": str(e)

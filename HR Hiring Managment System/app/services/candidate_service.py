@@ -52,6 +52,14 @@ class CandidateService:
             Dict with candidate_id and status
         """
         try:
+            # Check if candidate already exists
+            existing_candidate = self.db.query(Candidate).filter(Candidate.email == email).first()
+            if existing_candidate:
+                return {
+                    "status": "error",
+                    "message": f"Candidate with email {email} already exists."
+                }
+
             # Create candidate record
             candidate = Candidate(
                 name=name,
@@ -90,6 +98,13 @@ class CandidateService:
                 )
                 
                 logger.info(f"Successfully submitted candidate {candidate.id}")
+                
+                # Check for cached role_id if available (e.g. from form data)
+                # For now, we return success and let the frontend trigger evaluation or handle it separately
+                # But to fix the "No candidates scored" issue, we should ensure evaluation happens.
+                # Since submit_candidate doesn't take role_id currently, we rely on the frontend calling /evaluate
+                # OR we update submit_candidate to take role_id.
+                
                 return {
                     "status": "success",
                     "candidate_id": candidate.id,
@@ -304,6 +319,8 @@ class CandidateService:
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error processing shortlist: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 "status": "error",
                 "message": str(e)

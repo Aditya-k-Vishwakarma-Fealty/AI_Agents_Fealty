@@ -43,6 +43,7 @@ async def submit_candidate(
     name: str = Form(...),
     email: EmailStr = Form(...),
     phone: Optional[str] = Form(None),
+    role_id: Optional[int] = Form(None),
     resume: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
@@ -79,14 +80,27 @@ async def submit_candidate(
         )
         
         if result["status"] == "success":
+            candidate_id = result["candidate_id"]
+            
+            # If role_id is provided in form data (it should be), trigger evaluation
+            if role_id:
+                try:
+                    await service.evaluate_candidate(candidate_id, role_id)
+                except Exception as eval_error:
+                    logger.error(f"Auto-evaluation failed: {eval_error}")
+                    # We still return success for submission, but maybe with a warning
+            
             return {
-                "candidate_id": result["candidate_id"],
+                "candidate_id": candidate_id,
                 "status": "success",
                 "message": "Candidate submitted successfully",
                 "parsed_data": result.get("parsed_data")
             }
         else:
-            raise HTTPException(status_code=500, detail=result.get("message", "Submission failed"))
+            message = result.get("message", "Submission failed")
+            if "exists" in message.lower():
+                raise HTTPException(status_code=400, detail=message)
+            raise HTTPException(status_code=500, detail=message)
     except HTTPException:
         raise
     except Exception as e:
@@ -114,6 +128,33 @@ async def get_candidate(
         raise HTTPException(status_code=404, detail="Candidate not found")
     
     return candidate
+
+
+@router.get("/{candidate_id}/resume")
+async def get_candidate_resume(
+    candidate_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get candidate's resume file.
+    """
+    candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    if not candidate.resume_path:
+        raise HTTPException(status_code=404, detail="Resume not found for this candidate")
+        
+    import os
+    if not os.path.exists(candidate.resume_path):
+        raise HTTPException(status_code=404, detail="Resume file missing from storage")
+        
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        path=candidate.resume_path,
+        filename=os.path.basename(candidate.resume_path),
+        media_type='application/pdf' if candidate.resume_path.lower().endswith('.pdf') else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
 
 
 @router.post("/{candidate_id}/evaluate")

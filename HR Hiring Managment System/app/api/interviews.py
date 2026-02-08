@@ -202,7 +202,7 @@ async def schedule_interview(
             candidate_name=candidate.name,
             candidate_email=candidate.email,
             role_title=role.title,
-            interview_datetime=request.interview_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            interview_datetime=request.interview_datetime
         )
         
         if result["status"] == "success":

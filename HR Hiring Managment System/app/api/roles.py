@@ -201,11 +201,17 @@ async def run_shortlist(
         if result["status"] == "success":
             return result
         else:
-            raise HTTPException(status_code=500, detail=result.get("message", "Shortlisting failed"))
+            message = result.get("message", "Shortlisting failed")
+            logger.error(f"Shortlisting failed for role {role_id}: {message}")
+            if "No candidates" in message:
+                 raise HTTPException(status_code=400, detail=message)
+            raise HTTPException(status_code=500, detail=message)
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in shortlist endpoint: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
