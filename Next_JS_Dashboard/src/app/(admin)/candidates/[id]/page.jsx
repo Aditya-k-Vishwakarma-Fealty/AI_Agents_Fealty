@@ -153,7 +153,7 @@ export default function CandidateDetailPage({ params }) {
                                 <div className="flex items-center gap-3">
                                     <FileText className="h-4 w-4 text-muted-foreground" />
                                     <a
-                                        href={`http://localhost:8000/candidates/${candidate.id}/resume`}
+                                        href={`https://ai-agents-fealty.onrender.com/candidates/${candidate.id}/resume`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 hover:underline"
