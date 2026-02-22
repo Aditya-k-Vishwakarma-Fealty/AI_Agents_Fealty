@@ -181,7 +181,7 @@ async def schedule_interview(
         db: Session
     """
     try:
-        from app.db.models import Candidate, Role
+        from app.db.models import Candidate, Role, CandidateStage
         from app.tools.email_tool import EmailTool
         from app.services.candidate_service import CandidateService
         
@@ -192,8 +192,10 @@ async def schedule_interview(
         if not candidate or not role:
             raise HTTPException(status_code=404, detail="Candidate or role not found")
         
-        # Update preferred time in DB
+        # Update preferred time and stage in DB
         candidate.preferred_interview_time = request.interview_datetime
+        if candidate.current_stage != CandidateStage.INTERVIEWED and candidate.current_stage != CandidateStage.FINAL:
+            candidate.current_stage = CandidateStage.SHORTLISTED
         db.commit()
 
         # Send interview invitation email
