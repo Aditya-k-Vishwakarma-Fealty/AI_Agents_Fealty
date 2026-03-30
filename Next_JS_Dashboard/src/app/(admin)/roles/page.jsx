@@ -17,10 +17,6 @@ export default function RolesPage() {
         experience_required: 0,
     })
 
-    useEffect(() => {
-        fetchRoles()
-    }, [])
-
     const fetchRoles = async () => {
         try {
             const data = await getRoles()
@@ -29,6 +25,20 @@ export default function RolesPage() {
             console.error("Failed to fetch roles:", error)
         }
     }
+
+    useEffect(() => {
+        let cancelled = false
+        getRoles()
+            .then((data) => {
+                if (!cancelled) setRoles(Array.isArray(data) ? data : [])
+            })
+            .catch((error) => {
+                console.error("Failed to fetch roles:", error)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [])
 
     const handleSubmit = async (e) => {
         e.preventDefault()

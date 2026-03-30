@@ -1,7 +1,16 @@
 import client from './client';
 
-export const getCandidates = async () => {
-    const response = await client.get('/candidates');
+export const getCandidates = async (params = {}) => {
+    const { limit = 100, skip = 0, role_id, status, stage } = params;
+    const response = await client.get('/candidates', {
+        params: {
+            limit,
+            skip,
+            ...(role_id != null && { role_id }),
+            ...(status && { status }),
+            ...(stage && { stage }),
+        },
+    });
     return response.data;
 };
 

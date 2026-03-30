@@ -1,7 +1,12 @@
 import client from './client';
 
-// getInterviews was pointing to a non-existent endpoint. 
-// Replaced with specific methods.
+export const getInterviews = async (params = {}) => {
+    const { limit = 50, skip = 0 } = params;
+    const response = await client.get('/interviews', {
+        params: { limit, skip },
+    });
+    return response.data;
+};
 
 export const getInterview = async (id) => {
     const response = await client.get(`/interviews/${id}`);

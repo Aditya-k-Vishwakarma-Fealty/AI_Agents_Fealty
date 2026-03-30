@@ -323,7 +323,7 @@ export default function RoleDetailPage({ params }) {
                                                 </tr>
                                             ))}
                                             {rankings.length === 0 && (
-                                                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No rankings generated yet. Click "Generate Ranking" to start.</td></tr>
+                                                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No rankings generated yet. Use the Generate Ranking action above to start.</td></tr>
                                             )}
                                         </tbody>
                                     </table>

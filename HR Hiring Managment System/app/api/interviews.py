@@ -1,15 +1,15 @@
 """
 Interviews API Router - Endpoints for interview management.
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import logging
 from datetime import datetime
 
 from app.db.session import get_db
-from app.db.models import Interview
+from app.db.models import Interview, Candidate, Role
 from app.services.evaluation_service import EvaluationService
 
 logger = logging.getLogger(__name__)
@@ -44,10 +44,69 @@ class InterviewResponse(BaseModel):
         from_attributes = True
 
 
+class InterviewListItem(BaseModel):
+    """Interview row for list views with joined names."""
+
+    id: int
+    candidate_id: int
+    role_id: int
+    candidate_name: str
+    role_title: str
+    interviewer_name: Optional[str]
+    communication_score: float
+    knowledge_score: float
+    confidence_score: float
+    overall_score: float
+    feedback: Optional[str]
+    interview_date: Optional[datetime]
+    created_date: Optional[datetime]
+    is_voice_interview: bool = False
+
+
 class ScheduleInterviewRequest(BaseModel):
     candidate_id: int
     role_id: int
     interview_datetime: str
+
+
+@router.get("", response_model=List[InterviewListItem])
+async def list_interviews(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """List interviews (newest first) with candidate and role names."""
+    rows = (
+        db.query(Interview)
+        .options(joinedload(Interview.candidate), joinedload(Interview.role))
+        .order_by(Interview.created_date.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    out: List[InterviewListItem] = []
+    for i in rows:
+        cand: Optional[Candidate] = i.candidate
+        role: Optional[Role] = i.role
+        out.append(
+            InterviewListItem(
+                id=i.id,
+                candidate_id=i.candidate_id,
+                role_id=i.role_id,
+                candidate_name=cand.name if cand else "",
+                role_title=role.title if role else "",
+                interviewer_name=i.interviewer_name,
+                communication_score=i.communication_score,
+                knowledge_score=i.knowledge_score,
+                confidence_score=i.confidence_score,
+                overall_score=i.overall_score,
+                feedback=i.feedback,
+                interview_date=i.interview_date,
+                created_date=i.created_date,
+                is_voice_interview=bool(i.is_voice_interview),
+            )
+        )
+    return out
 
 
 @router.post("/submit")

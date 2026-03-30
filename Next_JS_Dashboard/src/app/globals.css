@@ -76,7 +76,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  background-color: color-mix(in oklab, var(--primary) 28%, transparent);
+  color: var(--foreground);
+}
+
 /* Utilities for proper borders */
 .border-border {
   border-color: var(--border);
+}
+
+/* Fix selection styling (in case of selector typos) */
+::selection {
+  background-color: color-mix(in oklab, var(--primary) 28%, transparent);
+  color: var(--foreground);
+}
+
+/* Fallback multi-line truncation (Tailwind line-clamp is not configured). */
+.line-clamp-1,
+.line-clamp-2,
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-1 {
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  -webkit-line-clamp: 3;
 }
